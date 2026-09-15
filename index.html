@@ -9,8 +9,10 @@
     <meta name="theme-color" content="#121212">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <link rel="icon" href="icons/icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" type="text/javascript"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -99,6 +101,12 @@
             text-align: center;
             min-height: 15px;
         }
+        #app-version {
+            font-size: 0.7rem;
+            color: #555;
+            text-align: center;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -121,11 +129,32 @@
         <button class="btn-copy" onclick="copiarAlPortapapeles()">Copiar Código</button>
         <button class="btn-warning" onclick="reiniciarEscaneo()" style="margin-top: 6px;">Escanear Siguiente</button>
     </div>
+
+    <div id="app-version">v...</div>
 </div>
 
 <script>
     let html5QrCode = null;
     let cameraInitialized = false;
+
+    // Lee la versión desde sw.js (CACHE_NAME = 'lector-cache-vX.Y.Z') para
+    // mostrarla en pantalla sin tener que duplicar el número a mano.
+    (async function mostrarVersion() {
+        const el = document.getElementById('app-version');
+        try {
+            const res = await fetch('./sw.js', { cache: 'no-store' });
+            const texto = await res.text();
+            const match = texto.match(/CACHE_NAME\s*=\s*['"]([^'"]+)['"]/);
+            if (match) {
+                const version = match[1].replace(/^lector-cache-/, '');
+                el.innerText = `v${version}`;
+            } else {
+                el.innerText = '';
+            }
+        } catch (err) {
+            el.innerText = '';
+        }
+    })();
 
     async function inicializarYCategorizarCamara() {
         if (cameraInitialized) return true;
@@ -153,9 +182,19 @@
                 cameraInitialized = true;
                 return true;
             }
+            document.getElementById('error-msg').innerText = "No se encontró ninguna cámara en este dispositivo.";
         } catch (err) {
             console.error(err);
-            document.getElementById('error-msg').innerText = "Error de permisos de cámara. Usa HTTPS.";
+            const nombre = err && err.name;
+            let mensaje = "Error de permisos de cámara. Usa HTTPS.";
+            if (nombre === "NotAllowedError") {
+                mensaje = "Permiso de cámara denegado. Habilitalo en la configuración del navegador.";
+            } else if (nombre === "NotFoundError" || nombre === "OverconstrainedError") {
+                mensaje = "No se encontró ninguna cámara en este dispositivo.";
+            } else if (nombre === "NotReadableError") {
+                mensaje = "La cámara está siendo usada por otra aplicación.";
+            }
+            document.getElementById('error-msg').innerText = mensaje;
         }
         return false;
     }
@@ -231,6 +270,7 @@
     async function reiniciarEscaneo() {
         document.getElementById('result-box').style.display = 'none';
         document.getElementById('reader').style.display = 'block';
+        document.querySelector('.btn-copy').innerText = "Copiar Código";
         await toggleEscanner();
     }
 

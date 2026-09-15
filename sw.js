@@ -1,8 +1,11 @@
-const CACHE_NAME = 'lector-cache-v1.0.1';
+const CACHE_NAME = 'lector-cache-v1.1.0';
 const urlsToCache = [
   './',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'
 ];
 
 // Instalación del Service Worker
@@ -31,12 +34,11 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Interceptación de peticiones para funcionamiento offline y estricto
+// Interceptación de peticiones para funcionamiento offline: cache-first,
+// y si el recurso no está cacheado se busca en red.
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
-      .then((response) => {
-        return response || fetch(event.request);
-      })
+      .then((response) => response || fetch(event.request))
   );
 });
