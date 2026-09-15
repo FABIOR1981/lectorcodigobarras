@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Dinámico - Códigos de Barras y QR</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 25px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .card img {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        .card span {
+            font-family: monospace;
+            font-size: 0.85rem;
+            background: #eef2f5;
+            padding: 4px 8px;
+            border-radius: 4px;
+            word-break: break-all;
+            color: #007bff;
+        }
+        .dynamic-badge {
+            font-size: 0.75rem;
+            background: #28a745;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Panel de Códigos Dinámicos</h1>
+    <p>Cada vez que recargues esta página, los códigos con etiqueta verde cambiarán con la hora exacta.</p>
+
+    <div class="grid">
+        <!-- DINÁMICO 1: QR con Fecha y Hora Actual -->
+        <div class="card">
+            <span class="dynamic-badge">DINÁMICO (Fecha/Hora)</span>
+            <img id="qr-dynamic" src="" alt="QR Dinámico">
+            <span id="text-qr">-</span>
+        </div>
+
+        <!-- DINÁMICO 2: Código de Barras con Timestamp numérico -->
+        <div class="card">
+            <span class="dynamic-badge">DINÁMICO (Timestamp)</span>
+            <img id="barcode-dynamic" src="" alt="Barcode Dinámico">
+            <span id="text-bar">-</span>
+        </div>
+
+        <!-- ESTÁTICO 1 -->
+        <div class="card">
+            <span>ESTÁTICO</span>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=TEST-S22-12345" alt="QR Estático">
+            <span>TEST-S22-12345</span>
+        </div>
+
+        <!-- ESTÁTICO 2 -->
+        <div class="card">
+            <span>ESTÁTICO</span>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://www.google.com" alt="QR Google">
+            <span>https://www.google.com</span>
+        </div>
+
+        <!-- ESTÁTICO 3 -->
+        <div class="card">
+            <span>ESTÁTICO (Barras)</span>
+            <img src="https://barcode.tec-it.com/barcode.ashx?data=7791234567890&code=Code128&dpi=96" alt="Barcode 1">
+            <span>7791234567890</span>
+        </div>
+
+        <!-- ESTÁTICO 4 -->
+        <div class="card">
+            <span>ESTÁTICO (Barras)</span>
+            <img src="https://barcode.tec-it.com/barcode.ashx?data=CONSULTORIO-01&code=Code128&dpi=96" alt="Barcode 3">
+            <span>CONSULTORIO-01</span>
+        </div>
+    </div>
+
+    <script>
+        // Generar datos basados en el momento exacto de apertura/recarga
+        const ahora = new Date();
+        
+        // Formato de fecha y hora legible para el QR: "2026-09-15 14:05:30"
+        const anio = ahora.getFullYear();
+        const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+        const dia = String(ahora.getDate()).padStart(2, '0');
+        const hora = String(ahora.getHours()).padStart(2, '0');
+        const min = String(ahora.getMinutes()).padStart(2, '0');
+        const seg = String(ahora.getSeconds()).padStart(2, '0');
+        
+        const textoDinamicoQR = `LOG-${anio}${mes}${dia}-${hora}:${min}:${seg}`;
+        
+        // Código numérico único basado en milisegundos exactos para el código de barras
+        const textoDinamicoBarra = String(Date.now()).slice(-10);
+
+        // Inyectar QR dinámico
+        document.getElementById('qr-dynamic').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(textoDinamicoQR)}`;
+        document.getElementById('text-qr').innerText = textoDinamicoQR;
+
+        // Inyectar Código de barras dinámico
+        document.getElementById('barcode-dynamic').src = `https://barcode.tec-it.com/barcode.ashx?data=${textoDinamicoBarra}&code=Code128&dpi=96`;
+        document.getElementById('text-bar').innerText = textoDinamicoBarra;
+    </script>
+
+</body>
+</html>

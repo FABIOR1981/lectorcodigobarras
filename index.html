@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lector de Códigos</title>
+    <!-- Configuración para PWA (Instalación como App) -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#121212">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        h2 {
+            margin: 5px 0 8px 0;
+            font-size: 1.1rem;
+            color: #ffffff;
+            text-align: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 420px;
+            background: #1e1e1e;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        #reader {
+            width: 100% !important;
+            border-radius: 8px;
+            overflow: hidden;
+            border: none !important;
+            max-height: 260px;
+        }
+        #reader video {
+            border-radius: 8px;
+            object-fit: cover;
+            max-height: 260px;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: bold;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+        .btn-success { background-color: #4CAF50; color: #fff; }
+        .btn-danger { background-color: #f44336; color: #fff; }
+        .btn-warning { background-color: #ff9800; color: #000; }
+        .btn-copy { background-color: #00bcd4; color: #000; margin-top: 6px; }
+        
+        #result-box {
+            padding: 8px;
+            background: #2a2a2a;
+            border-left: 4px solid #4CAF50;
+            border-radius: 4px;
+            word-break: break-all;
+            display: none;
+        }
+        .result-title {
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 2px;
+        }
+        .result-content {
+            font-size: 1rem;
+            font-family: monospace;
+            color: #fff;
+        }
+        #error-msg {
+            color: #ff5252;
+            font-size: 0.8rem;
+            text-align: center;
+            min-height: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Lector de Códigos</h2>
+    
+    <div class="controls">
+        <button class="btn-success" id="btn-action" onclick="toggleEscanner()">Iniciar Lector</button>
+    </div>
+
+    <select id="camera-select" style="display:none;"></select>
+    <div id="error-msg"></div>
+
+    <div id="reader"></div>
+
+    <div id="result-box">
+        <div class="result-title" id="format-type">Código detectado:</div>
+        <div class="result-content" id="result-text">-</div>
+        <button class="btn-copy" onclick="copiarAlPortapapeles()">Copiar Código</button>
+        <button class="btn-warning" onclick="reiniciarEscaneo()" style="margin-top: 6px;">Escanear Siguiente</button>
+    </div>
+</div>
+
+<script>
+    let html5QrCode = null;
+    let cameraInitialized = false;
+
+    async function inicializarYCategorizarCamara() {
+        if (cameraInitialized) return true;
+        try {
+            html5QrCode = new Html5Qrcode("reader");
+            let cameras = await Html5Qrcode.getCameras();
+            
+            if (cameras && cameras.length > 0) {
+                const select = document.getElementById('camera-select');
+                select.innerHTML = "";
+                let selectedCamId = cameras[0].id;
+
+                cameras.forEach((cam, index) => {
+                    let option = document.createElement('option');
+                    option.value = cam.id;
+                    option.text = cam.label || `Lente ${index + 1}`;
+                    select.appendChild(option);
+
+                    if (cam.label.toLowerCase().includes('back') || index === 0) {
+                        selectedCamId = cam.id;
+                    }
+                });
+
+                select.value = selectedCamId;
+                cameraInitialized = true;
+                return true;
+            }
+        } catch (err) {
+            console.error(err);
+            document.getElementById('error-msg').innerText = "Error de permisos de cámara. Usa HTTPS.";
+        }
+        return false;
+    }
+
+    async function toggleEscanner() {
+        const btnAction = document.getElementById('btn-action');
+
+        if (html5QrCode && html5QrCode.isScanning) {
+            await detenerEscanner();
+            return;
+        }
+
+        document.getElementById('error-msg').innerText = "Iniciando...";
+        let listo = await inicializarYCategorizarCamara();
+        if (!listo) return;
+
+        const cameraId = document.getElementById('camera-select').value;
+        const config = {
+            fps: 15,
+            qrbox: { width: 250, height: 180 }, 
+            aspectRatio: 4/3
+        };
+
+        try {
+            await html5QrCode.start(
+                cameraId, 
+                config,
+                async (decodedText, decodedResult) => {
+                    if (html5QrCode && html5QrCode.isScanning) {
+                        await html5QrCode.stop();
+                    }
+
+                    document.getElementById('result-box').style.display = 'block';
+                    document.getElementById('format-type').innerText = `Formato: ${decodedResult.result.format.formatName || 'Detectado'}`;
+                    document.getElementById('result-text').innerText = decodedText;
+                    
+                    const btnAction = document.getElementById('btn-action');
+                    btnAction.innerText = "Iniciar Lector";
+                    btnAction.className = "btn-success";
+                    document.getElementById('reader').style.display = 'none';
+
+                    if (navigator.vibrate) {
+                        navigator.vibrate(100);
+                    }
+                },
+                (errorMessage) => {}
+            );
+
+            document.getElementById('error-msg').innerText = "";
+            btnAction.innerText = "Detener Lector";
+            btnAction.className = "btn-danger";
+            document.getElementById('reader').style.display = 'block';
+        } catch (err) {
+            console.error(err);
+            document.getElementById('error-msg').innerText = "No se pudo iniciar la cámara.";
+        }
+    }
+
+    async function detenerEscanner() {
+        if (html5QrCode && html5QrCode.isScanning) {
+            try {
+                await html5QrCode.stop();
+                document.getElementById('error-msg').innerText = "Lector detenido.";
+                const btnAction = document.getElementById('btn-action');
+                btnAction.innerText = "Iniciar Lector";
+                btnAction.className = "btn-success";
+            } catch (err) {
+                console.error("Error al detener", err);
+            }
+        }
+    }
+
+    async function reiniciarEscaneo() {
+        document.getElementById('result-box').style.display = 'none';
+        document.getElementById('reader').style.display = 'block';
+        await toggleEscanner();
+    }
+
+    function copiarAlPortapapeles() {
+        const texto = document.getElementById('result-text').innerText;
+        if (texto && texto !== "-") {
+            navigator.clipboard.writeText(texto).then(() => {
+                const btnCopy = document.querySelector('.btn-copy');
+                btnCopy.innerText = "¡Copiado!";
+                setTimeout(() => {
+                    btnCopy.innerText = "Copiar Código";
+                }, 2000);
+            });
+        }
+    }
+</script>
+
+</body>
+</html>
