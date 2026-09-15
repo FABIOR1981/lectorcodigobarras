@@ -76,6 +76,8 @@
         .btn-danger { background-color: #f44336; color: #fff; }
         .btn-warning { background-color: #ff9800; color: #000; }
         .btn-copy { background-color: #00bcd4; color: #000; margin-top: 6px; }
+        .btn-exit { background-color: #333; color: #fff; margin-top: 2px; }
+        .btn-exit:hover { background-color: #444; }
         
         #result-box {
             padding: 8px;
@@ -116,6 +118,7 @@
     
     <div class="controls">
         <button class="btn-success" id="btn-action" onclick="toggleEscanner()">Iniciar Lector</button>
+        <button class="btn-exit" onclick="salirApp()">Salir</button>
     </div>
 
     <select id="camera-select" style="display:none;"></select>
@@ -137,8 +140,7 @@
     let html5QrCode = null;
     let cameraInitialized = false;
 
-    // Lee la versión desde sw.js (CACHE_NAME = 'lector-cache-vX.Y.Z') para
-    // mostrarla en pantalla sin tener que duplicar el número a mano.
+    // Lee la versión dinámicamente desde sw.js
     (async function mostrarVersion() {
         const el = document.getElementById('app-version');
         try {
@@ -285,6 +287,14 @@
                 }, 2000);
             });
         }
+    }
+
+    async function salirApp() {
+        await detenerEscanner();
+        window.close();
+        setTimeout(() => {
+            window.location.href = "about:blank";
+        }, 200);
     }
 </script>
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lector-cache-v1.1.0';
+const CACHE_NAME = 'lector-cache-v1.1.1';
 const urlsToCache = [
   './',
   './index.html',
@@ -34,8 +34,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Interceptación de peticiones para funcionamiento offline: cache-first,
-// y si el recurso no está cacheado se busca en red.
+// Interceptación de peticiones para funcionamiento offline
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
