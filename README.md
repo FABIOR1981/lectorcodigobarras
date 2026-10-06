@@ -2,6 +2,10 @@
 
 Una aplicación web progresiva (PWA) minimalista y rápida diseñada para escanear códigos QR y de barras utilizando la cámara del dispositivo móvil, con soporte para instalación en pantalla completa (modo *standalone*) y funcionamiento optimizado.
 
+## Documentación
+
+El manual de usuario está en [documentacion-central](https://github.com/FABIOR1981/documentacion-central/tree/main/lectorcodigobarras/documentacion) ([PDF](https://github.com/FABIOR1981/documentacion-central/blob/main/lectorcodigobarras/documentacion/MANUAL_USUARIO.pdf)). También se puede consultar desde la bitácora de proyectos.
+
 ## 🚀 Características Principales
 
 * **Modo PWA Nativa:** Se puede instalar directamente en la pantalla de inicio de tu smartphone (como Android/Samsung) abriéndose en una ventana limpia y sin barras de navegador.
